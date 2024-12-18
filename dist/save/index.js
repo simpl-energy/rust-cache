@@ -77896,9 +77896,14 @@ async function run() {
         if (process.env["RUNNER_OS"] == "macOS") {
             await macOsWorkaround();
         }
+        const crates = core.getInput("cache-all-crates").toLowerCase() || "false";
         const allPackages = [];
         for (const workspace of config.workspaces) {
             const packages = await workspace.getPackagesOutsideWorkspaceRoot();
+            if (crates === "true") {
+                const wsMembers = await workspace.getWorkspaceMembers();
+                packages.push(...wsMembers);
+            }
             allPackages.push(...packages);
             try {
                 core.info(`... Cleaning ${workspace.target} ...`);
@@ -77909,7 +77914,6 @@ async function run() {
             }
         }
         try {
-            const crates = core.getInput("cache-all-crates").toLowerCase() || "false";
             core.info(`... Cleaning cargo registry (cache-all-crates: ${crates}) ...`);
             await cleanRegistry(allPackages, crates !== "true");
         }
