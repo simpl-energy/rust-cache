@@ -27,7 +27,6 @@ async function run() {
     var lookupOnly = core.getInput("lookup-only").toLowerCase() === "true";
 
     core.exportVariable("CACHE_ON_FAILURE", cacheOnFailure);
-    core.exportVariable("CARGO_INCREMENTAL", 0);
 
     const config = await CacheConfig.new();
     config.printInfo(cacheProvider);
