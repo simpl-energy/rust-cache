@@ -1,6 +1,165 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 7138:
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = (flag, argv = process.argv) => {
+	const prefix = flag.startsWith('-') ? '' : (flag.length === 1 ? '-' : '--');
+	const position = argv.indexOf(prefix + flag);
+	const terminatorPosition = argv.indexOf('--');
+	return position !== -1 && (terminatorPosition === -1 || position < terminatorPosition);
+};
+
+
+/***/ }),
+
+/***/ 6969:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const os = __nccwpck_require__(857);
+const tty = __nccwpck_require__(2018);
+const hasFlag = __nccwpck_require__(7138);
+
+const {env} = process;
+
+let forceColor;
+if (hasFlag('no-color') ||
+	hasFlag('no-colors') ||
+	hasFlag('color=false') ||
+	hasFlag('color=never')) {
+	forceColor = 0;
+} else if (hasFlag('color') ||
+	hasFlag('colors') ||
+	hasFlag('color=true') ||
+	hasFlag('color=always')) {
+	forceColor = 1;
+}
+
+if ('FORCE_COLOR' in env) {
+	if (env.FORCE_COLOR === 'true') {
+		forceColor = 1;
+	} else if (env.FORCE_COLOR === 'false') {
+		forceColor = 0;
+	} else {
+		forceColor = env.FORCE_COLOR.length === 0 ? 1 : Math.min(parseInt(env.FORCE_COLOR, 10), 3);
+	}
+}
+
+function translateLevel(level) {
+	if (level === 0) {
+		return false;
+	}
+
+	return {
+		level,
+		hasBasic: true,
+		has256: level >= 2,
+		has16m: level >= 3
+	};
+}
+
+function supportsColor(haveStream, streamIsTTY) {
+	if (forceColor === 0) {
+		return 0;
+	}
+
+	if (hasFlag('color=16m') ||
+		hasFlag('color=full') ||
+		hasFlag('color=truecolor')) {
+		return 3;
+	}
+
+	if (hasFlag('color=256')) {
+		return 2;
+	}
+
+	if (haveStream && !streamIsTTY && forceColor === undefined) {
+		return 0;
+	}
+
+	const min = forceColor || 0;
+
+	if (env.TERM === 'dumb') {
+		return min;
+	}
+
+	if (process.platform === 'win32') {
+		// Windows 10 build 10586 is the first Windows release that supports 256 colors.
+		// Windows 10 build 14931 is the first release that supports 16m/TrueColor.
+		const osRelease = os.release().split('.');
+		if (
+			Number(osRelease[0]) >= 10 &&
+			Number(osRelease[2]) >= 10586
+		) {
+			return Number(osRelease[2]) >= 14931 ? 3 : 2;
+		}
+
+		return 1;
+	}
+
+	if ('CI' in env) {
+		if (['TRAVIS', 'CIRCLECI', 'APPVEYOR', 'GITLAB_CI', 'GITHUB_ACTIONS', 'BUILDKITE'].some(sign => sign in env) || env.CI_NAME === 'codeship') {
+			return 1;
+		}
+
+		return min;
+	}
+
+	if ('TEAMCITY_VERSION' in env) {
+		return /^(9\.(0*[1-9]\d*)\.|\d{2,}\.)/.test(env.TEAMCITY_VERSION) ? 1 : 0;
+	}
+
+	if (env.COLORTERM === 'truecolor') {
+		return 3;
+	}
+
+	if ('TERM_PROGRAM' in env) {
+		const version = parseInt((env.TERM_PROGRAM_VERSION || '').split('.')[0], 10);
+
+		switch (env.TERM_PROGRAM) {
+			case 'iTerm.app':
+				return version >= 3 ? 3 : 2;
+			case 'Apple_Terminal':
+				return 2;
+			// No default
+		}
+	}
+
+	if (/-256(color)?$/i.test(env.TERM)) {
+		return 2;
+	}
+
+	if (/^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux/i.test(env.TERM)) {
+		return 1;
+	}
+
+	if ('COLORTERM' in env) {
+		return 1;
+	}
+
+	return min;
+}
+
+function getSupportLevel(stream) {
+	const level = supportsColor(stream, stream && stream.isTTY);
+	return translateLevel(level);
+}
+
+module.exports = {
+	supportsColor: getSupportLevel,
+	stdout: translateLevel(supportsColor(true, tty.isatty(1))),
+	stderr: translateLevel(supportsColor(true, tty.isatty(2)))
+};
+
+
+/***/ }),
+
 /***/ 4318:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -43709,7 +43868,7 @@ exports.colors = [6, 2, 3, 4, 5, 1];
 try {
 	// Optional dependency (as in, doesn't need to be installed, NOT like optionalDependencies in package.json)
 	// eslint-disable-next-line import/no-extraneous-dependencies
-	const supportsColor = __nccwpck_require__(75);
+	const supportsColor = __nccwpck_require__(6969);
 
 	if (supportsColor && (supportsColor.stderr || supportsColor).level >= 2) {
 		exports.colors = [
@@ -74187,14 +74346,6 @@ module.exports = v4;
 
 /***/ }),
 
-/***/ 75:
-/***/ ((module) => {
-
-module.exports = eval("require")("supports-color");
-
-
-/***/ }),
-
 /***/ 2613:
 /***/ ((module) => {
 
@@ -85436,6 +85587,9 @@ var lib_io = __nccwpck_require__(4994);
 // EXTERNAL MODULE: external "fs"
 var external_fs_ = __nccwpck_require__(9896);
 var external_fs_default = /*#__PURE__*/__nccwpck_require__.n(external_fs_);
+// EXTERNAL MODULE: external "fs/promises"
+var promises_ = __nccwpck_require__(1943);
+var promises_default = /*#__PURE__*/__nccwpck_require__.n(promises_);
 // EXTERNAL MODULE: external "path"
 var external_path_ = __nccwpck_require__(6928);
 var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_);
@@ -85444,9 +85598,6 @@ var glob = __nccwpck_require__(7206);
 // EXTERNAL MODULE: external "crypto"
 var external_crypto_ = __nccwpck_require__(6982);
 var external_crypto_default = /*#__PURE__*/__nccwpck_require__.n(external_crypto_);
-// EXTERNAL MODULE: external "fs/promises"
-var promises_ = __nccwpck_require__(1943);
-var promises_default = /*#__PURE__*/__nccwpck_require__.n(promises_);
 // EXTERNAL MODULE: external "os"
 var external_os_ = __nccwpck_require__(857);
 var external_os_default = /*#__PURE__*/__nccwpck_require__.n(external_os_);
@@ -87028,7 +87179,42 @@ function sort_and_uniq(a) {
 
 
 
-async function cleanTargetDir(targetDir, packages, checkTimestamp = false) {
+
+async function getBuildFiles(buildOutputFiles) {
+    var files = [];
+    for (const buildOutputFile of buildOutputFiles) {
+        core.debug(`Reading ${buildOutputFile}`);
+        const content = await fs_promises.readFile(buildOutputFile, {
+            encoding: "utf8",
+        });
+        for (const line of content.split("\n")) {
+            if (!line)
+                continue;
+            const info = JSON.parse(line);
+            if (info.filenames !== undefined) {
+                for (const fn of info.filenames) {
+                    files.push(fn);
+                }
+            }
+        }
+    }
+    return new Set(files);
+}
+function packageHashesFor(depsDir, buildFiles) {
+    var hashes = [];
+    for (const buildFile of buildFiles) {
+        const parsedFile = external_path_default().parse(buildFile);
+        if (parsedFile.dir == depsDir) {
+            const filename = parsedFile.name;
+            hashes.push(filename);
+            if (filename.startsWith("lib")) {
+                hashes.push(filename.substring(3));
+            }
+        }
+    }
+    return new Set(hashes);
+}
+async function cleanTargetDir(targetDir, packages, buildFiles, checkTimestamp = false) {
     lib_core.debug(`cleaning target directory "${targetDir}"`);
     // remove all *files* from the profile directory
     let dir = await external_fs_default().promises.opendir(targetDir);
@@ -87039,10 +87225,10 @@ async function cleanTargetDir(targetDir, packages, checkTimestamp = false) {
             let isNestedTarget = (await utils_exists(external_path_default().join(dirName, "CACHEDIR.TAG"))) || (await utils_exists(external_path_default().join(dirName, ".rustc_info.json")));
             try {
                 if (isNestedTarget) {
-                    await cleanTargetDir(dirName, packages, checkTimestamp);
+                    await cleanTargetDir(dirName, packages, buildFiles, checkTimestamp);
                 }
                 else {
-                    await cleanProfileTarget(dirName, packages, checkTimestamp);
+                    await cleanProfileTarget(dirName, packages, buildFiles, checkTimestamp);
                 }
             }
             catch { }
@@ -87052,7 +87238,7 @@ async function cleanTargetDir(targetDir, packages, checkTimestamp = false) {
         }
     }
 }
-async function cleanProfileTarget(profileDir, packages, checkTimestamp = false) {
+async function cleanProfileTarget(profileDir, packages, buildFiles, checkTimestamp = false) {
     lib_core.debug(`cleaning profile directory "${profileDir}"`);
     // Quite a few testing utility crates store compilation artifacts as nested
     // workspaces under `target/tests`. Notably, `target/tests/target` and
@@ -87061,12 +87247,12 @@ async function cleanProfileTarget(profileDir, packages, checkTimestamp = false) 
         try {
             // https://github.com/vertexclique/kaos/blob/9876f6c890339741cc5be4b7cb9df72baa5a6d79/src/cargo.rs#L25
             // https://github.com/eupn/macrotest/blob/c4151a5f9f545942f4971980b5d264ebcd0b1d11/src/cargo.rs#L27
-            cleanTargetDir(external_path_default().join(profileDir, "target"), packages, checkTimestamp);
+            cleanTargetDir(external_path_default().join(profileDir, "target"), packages, buildFiles, checkTimestamp);
         }
         catch { }
         try {
             // https://github.com/dtolnay/trybuild/blob/eec8ca6cb9b8f53d0caf1aa499d99df52cae8b40/src/cargo.rs#L50
-            cleanTargetDir(external_path_default().join(profileDir, "trybuild"), packages, checkTimestamp);
+            cleanTargetDir(external_path_default().join(profileDir, "trybuild"), packages, buildFiles, checkTimestamp);
         }
         catch { }
         // Delete everything else.
@@ -87078,15 +87264,18 @@ async function cleanProfileTarget(profileDir, packages, checkTimestamp = false) 
     const keepPkg = new Set(packages.map((p) => p.name));
     await rmExcept(external_path_default().join(profileDir, "build"), keepPkg, checkTimestamp);
     await rmExcept(external_path_default().join(profileDir, ".fingerprint"), keepPkg, checkTimestamp);
-    const keepDeps = new Set(packages.flatMap((p) => {
-        const names = [];
-        for (const n of [p.name, ...p.targets]) {
-            const name = n.replace(/-/g, "_");
-            names.push(name, `lib${name}`);
-        }
-        return names;
-    }));
-    await rmExcept(external_path_default().join(profileDir, "deps"), keepDeps, checkTimestamp);
+    const depsDir = external_path_default().join(profileDir, "deps");
+    const keepDeps = buildFiles.size > 0
+        ? packageHashesFor(depsDir, buildFiles)
+        : new Set(packages.flatMap((p) => {
+            const names = [];
+            for (const n of [p.name, ...p.targets]) {
+                const name = n.replace(/-/g, "_");
+                names.push(name, `lib${name}`);
+            }
+            return names;
+        }));
+    await rmExcept(depsDir, keepDeps, checkTimestamp);
 }
 async function getCargoBins() {
     const bins = new Set();
@@ -87282,12 +87471,15 @@ async function rmExcept(dirName, keepPrefix, checkTimestamp = false) {
             return;
         }
         let name = dirent.name;
+        // Strip the extension
+        const idxDot = name.lastIndexOf(".");
+        let noExtension = idxDot !== -1 ? name.slice(0, idxDot) : name;
         // strip the trailing hash
-        const idx = name.lastIndexOf("-");
-        if (idx !== -1) {
-            name = name.slice(0, idx);
-        }
-        if (!keepPrefix.has(name)) {
+        const idxDash = name.lastIndexOf("-");
+        let noHash = idxDash !== -1 ? name.slice(0, idxDash) : name;
+        if (!keepPrefix.has(name) &&
+            !keepPrefix.has(noExtension) &&
+            !keepPrefix.has(noHash)) {
             await rm(dir.path, dirent);
         }
     }
@@ -87353,7 +87545,7 @@ async function run() {
                 // pre-clean the target directory on cache mismatch
                 for (const workspace of config.workspaces) {
                     try {
-                        await cleanTargetDir(workspace.target, [], true);
+                        await cleanTargetDir(workspace.target, [], new Set(), true);
                     }
                     catch { }
                 }

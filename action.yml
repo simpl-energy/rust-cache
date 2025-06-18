@@ -52,6 +52,10 @@ inputs:
     description: "Check if a cache entry exists without downloading the cache"
     required: false
     default: "false"
+  build-output-files:
+    description: "YAML list of filenames that contain output from `cargo (check|build|test|..) --message-format json`"
+    required: false
+    default: ""
 outputs:
   cache-hit:
     description: "A boolean value that indicates an exact match was found."
